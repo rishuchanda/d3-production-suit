@@ -1,0 +1,1705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D3 Production - Business Suite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+        }
+        .sidebar {
+            background-color: #111827; /* Dark Gray */
+        }
+        .sidebar a {
+            transition: all 0.2s ease;
+        }
+        .sidebar a:hover, .sidebar a.active {
+            background-color: #374151; /* Lighter Gray */
+            color: #ffffff;
+        }
+        .main-content {
+            transition: opacity 0.3s ease-in-out;
+        }
+        [data-view] {
+            display: none;
+        }
+        [data-view].active {
+            display: block;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: all 0.2s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .btn-primary {
+            background-color: #ca8a04; /* Gold */
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s ease;
+        }
+        .btn-primary:hover {
+            background-color: #a16207;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #ca8a04;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        /* Invoice-specific styles */
+        .invoice-preview {
+            transition: all 0.3s ease;
+            font-family: 'Times New Roman', serif;
+        }
+        .theme-wedding {
+            background-color: #fff8f8;
+            border: 1px solid #e2b3b3;
+            color: #5d3a3a;
+        }
+        .theme-wedding .invoice-header {
+            background-color: #ca8a04; /* Gold */
+            color: white;
+            border-bottom: 5px solid #a16207;
+        }
+        .theme-wedding .invoice-table-header {
+            background-color: #fbeee2;
+        }
+
+        .theme-music {
+            background-color: #1a1a2e;
+            border: 1px solid #4a4a70;
+            color: #e0e0fc;
+        }
+        .theme-music .invoice-header {
+            background: linear-gradient(90deg, #16222a, #3a6073);
+            color: white;
+            border-bottom: 5px solid #00c6ff;
+        }
+        .theme-music .invoice-table-header {
+            background-color: #2c2c54;
+        }
+        .theme-music .invoice-totals {
+             border-top: 1px solid #4a4a70;
+        }
+        .theme-music input, .theme-music textarea {
+            background-color: #2c2c54;
+            border-color: #4a4a70;
+        }
+
+        .theme-corporate {
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb;
+            color: #111827;
+        }
+        .theme-corporate .invoice-header {
+            background-color: #1f2937;
+            color: white;
+            border-bottom: 5px solid #4b5563;
+        }
+        .theme-corporate .invoice-table-header {
+            background-color: #f3f4f6;
+        }
+
+        /* Gallery-specific styles */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        .gallery-item {
+            position: relative;
+            aspect-ratio: 1 / 1;
+            overflow: hidden;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        .gallery-item:hover {
+            transform: scale(1.03);
+        }
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .gallery-item .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.3);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .gallery-item:hover .overlay {
+            opacity: 1;
+        }
+        .gallery-item .select-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            padding: 0.5rem;
+            color: #333;
+            transition: all 0.2s ease;
+        }
+         .gallery-item .select-btn:hover {
+            background: white;
+            transform: scale(1.1);
+        }
+        .gallery-item.selected .select-btn {
+            background: #facc15; /* yellow-400 */
+            color: white;
+        }
+        .gallery-item.admin-selected-view::after {
+            content: '✓';
+            position: absolute;
+            bottom: 0.5rem;
+            right: 0.5rem;
+            background-color: #16a34a; /* green-600 */
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        #client-view-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            z-index: 100;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .invoice-preview-container, .invoice-preview-container * {
+                visibility: visible;
+            }
+            .invoice-preview-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            .invoice-preview {
+                box-shadow: none !important;
+                border: none !important;
+                width: 210mm;
+                height: 297mm;
+                margin: 0 auto;
+            }
+        }
+    </style>
+</head>
+<body class="antialiased text-gray-800">
+    <div class="flex h-screen bg-gray-100">
+        <!-- Sidebar -->
+        <aside class="sidebar w-64 text-gray-300 flex-shrink-0">
+            <div class="p-6">
+                <h1 class="text-3xl font-bold text-white tracking-wider">D3 PRODUCTION</h1>
+                <p class="text-sm text-gray-400">Business Suite</p>
+            </div>
+            <nav class="mt-6 px-4">
+                <a href="#" data-nav="dashboard" class="nav-link active flex items-center py-3 px-4 rounded-lg">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i> Dashboard
+                </a>
+                <a href="#" data-nav="invoices" class="nav-link flex items-center py-3 px-4 rounded-lg mt-2">
+                    <i data-lucide="receipt" class="w-5 h-5 mr-3"></i> Invoices
+                </a>
+                <a href="#" data-nav="quotations" class="nav-link flex items-center py-3 px-4 rounded-lg mt-2">
+                    <i data-lucide="file-text" class="w-5 h-5 mr-3"></i> Quotations
+                </a>
+                <a href="#" data-nav="gallery" class="nav-link flex items-center py-3 px-4 rounded-lg mt-2">
+                    <i data-lucide="gallery-vertical-end" class="w-5 h-5 mr-3"></i> Client Gallery
+                </a>
+                <a href="#" data-nav="poster-designer" class="nav-link flex items-center py-3 px-4 rounded-lg mt-2">
+                    <i data-lucide="image-plus" class="w-5 h-5 mr-3"></i> AI Poster Designer
+                </a>
+                <a href="#" data-nav="invitations" class="nav-link flex items-center py-3 px-4 rounded-lg mt-2">
+                    <i data-lucide="mail" class="w-5 h-5 mr-3"></i> Wedding Invitations
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto p-6 md:p-10 main-content">
+            <!-- Dashboard View -->
+            <div data-view="dashboard" class="active">
+                <h2 class="text-3xl font-bold mb-2">Welcome Back!</h2>
+                <p class="text-gray-500 mb-8">Here's a snapshot of your business.</p>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="card p-6 flex items-center">
+                        <div class="p-3 bg-blue-100 rounded-full mr-4">
+                            <i data-lucide="briefcase" class="w-6 h-6 text-blue-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-gray-500 text-sm">Ongoing Projects</p>
+                            <p class="text-2xl font-bold">12</p>
+                        </div>
+                    </div>
+                    <div class="card p-6 flex items-center">
+                        <div class="p-3 bg-green-100 rounded-full mr-4">
+                            <i data-lucide="indian-rupee" class="w-6 h-6 text-green-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-gray-500 text-sm">Payments Due</p>
+                            <p class="text-2xl font-bold">₹ 85,400</p>
+                        </div>
+                    </div>
+                    <div class="card p-6 flex items-center">
+                        <div class="p-3 bg-yellow-100 rounded-full mr-4">
+                             <i data-lucide="image-check" class="w-6 h-6 text-yellow-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-gray-500 text-sm">Pending Deliverables</p>
+                            <p class="text-2xl font-bold">5</p>
+                        </div>
+                    </div>
+                    <div class="card p-6 flex items-center">
+                        <div class="p-3 bg-purple-100 rounded-full mr-4">
+                             <i data-lucide="user-plus" class="w-6 h-6 text-purple-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-gray-500 text-sm">New Inquiries</p>
+                            <p class="text-2xl font-bold">3</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Core Modules Quick Access -->
+                <h3 class="text-2xl font-bold mb-6">Core Modules</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="card p-6 cursor-pointer" data-nav-card="invoices">
+                        <i data-lucide="receipt" class="w-10 h-10 text-indigo-500 mb-3"></i>
+                        <h4 class="text-xl font-semibold mb-1">Invoice Generator</h4>
+                        <p class="text-gray-500">Create & send professional GST invoices.</p>
+                    </div>
+                    <div class="card p-6 cursor-pointer" data-nav-card="quotations">
+                        <i data-lucide="file-text" class="w-10 h-10 text-sky-500 mb-3"></i>
+                        <h4 class="text-xl font-semibold mb-1">Quotation Maker</h4>
+                        <p class="text-gray-500">Generate and manage project estimates.</p>
+                    </div>
+                    <div class="card p-6 cursor-pointer" data-nav-card="gallery">
+                        <i data-lucide="gallery-vertical-end" class="w-10 h-10 text-emerald-500 mb-3"></i>
+                        <h4 class="text-xl font-semibold mb-1">Client Gallery</h4>
+                        <p class="text-gray-500">Securely share and manage client media.</p>
+                    </div>
+                    <div class="card p-6 cursor-pointer" data-nav-card="poster-designer">
+                        <i data-lucide="image-plus" class="w-10 h-10 text-rose-500 mb-3"></i>
+                        <h4 class="text-xl font-semibold mb-1">AI Poster Designer</h4>
+                        <p class="text-gray-500">Auto-generate beautiful social media posters.</p>
+                    </div>
+                    <div class="card p-6 cursor-pointer" data-nav-card="invitations">
+                        <i data-lucide="mail" class="w-10 h-10 text-amber-500 mb-3"></i>
+                        <h4 class="text-xl font-semibold mb-1">Wedding Invitations</h4>
+                        <p class="text-gray-500">Design stunning digital wedding invites.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Poster Designer View -->
+            <div data-view="poster-designer">
+                <h2 class="text-3xl font-bold mb-2">AI Poster Designer</h2>
+                <p class="text-gray-500 mb-8">Generate stunning posters for social media in seconds.</p>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Controls Column -->
+                    <div class="lg:col-span-1 card p-6">
+                        <h3 class="text-xl font-semibold mb-4">1. Upload & Customize</h3>
+                        <form id="poster-form">
+                            <div class="mb-4">
+                                <label class="block text-gray-700 text-sm font-bold mb-2" for="photo-upload">
+                                    Upload Photo (Optional)
+                                </label>
+                                <input class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none p-2" id="photo-upload" type="file" accept="image/*">
+                                <p class="mt-1 text-xs text-gray-500">Upload a client photo to feature in the poster.</p>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 text-sm font-bold mb-2" for="event-details">
+                                    Event Details
+                                </label>
+                                <textarea id="event-details" rows="4" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="e.g., Save the Date, Rohan & Priya, 25.12.2025"></textarea>
+                            </div>
+                             <div class="mb-4">
+                                <label class="block text-gray-700 text-sm font-bold mb-2" for="poster-theme">
+                                    Poster Theme
+                                </label>
+                                <select id="poster-theme" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                    <option>Wedding</option>
+                                    <option>Pre-wedding</option>
+                                    <option>Music Launch</option>
+                                    <option>Corporate Event</option>
+                                    <option>Birthday Party</option>
+                                </select>
+                            </div>
+                            <div class="mb-6">
+                                <label class="block text-gray-700 text-sm font-bold mb-2" for="poster-size">
+                                    Export Size
+                                </label>
+                                <select id="poster-size" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                    <option value="1080x1350">Instagram Post (1080x1350)</option>
+                                    <option value="1080x1080">Square (1080x1080)</option>
+                                    <option value="1080x1920">Story (1080x1920)</option>
+                                </select>
+                            </div>
+
+                            <button type="submit" class="btn-primary w-full flex items-center justify-center">
+                                <i data-lucide="wand-2" class="w-5 h-5 mr-2"></i> Generate Poster
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Result Column -->
+                    <div class="lg:col-span-2 card p-6">
+                        <h3 class="text-xl font-semibold mb-4">2. Your Generated Poster</h3>
+                        <div id="poster-result-container" class="w-full aspect-[4/5] bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
+                           <div id="poster-placeholder" class="text-center text-gray-500">
+                                <i data-lucide="image" class="w-16 h-16 mx-auto mb-2"></i>
+                                <p>Your AI-generated poster will appear here.</p>
+                           </div>
+                           <div id="poster-loader" class="hidden text-center text-gray-500">
+                               <div class="loader mx-auto"></div>
+                               <p class="mt-4">Generating your masterpiece... Please wait.</p>
+                           </div>
+                           <img id="poster-image" class="hidden w-full h-full object-contain rounded-lg" src="" alt="Generated Poster">
+                        </div>
+                        <div id="poster-actions" class="mt-4 text-center hidden">
+                           <a id="download-btn" href="#" download="d3-production-poster.png" class="btn-primary inline-flex items-center">
+                               <i data-lucide="download" class="w-5 h-5 mr-2"></i> Download Poster
+                           </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Invoice Generator View -->
+            <div data-view="invoices">
+                <h2 class="text-3xl font-bold mb-2">Invoice Generator</h2>
+                <p class="text-gray-500 mb-8">Create beautiful, professional invoices tailored to your clients.</p>
+                 <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                    <!-- Invoice Form -->
+                    <div class="lg:col-span-2 card p-6 h-fit">
+                        <h3 class="text-xl font-semibold mb-4 border-b pb-2">Invoice Details</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="invoice-theme" class="block text-sm font-medium text-gray-700">Service Type / Theme</label>
+                                <select id="invoice-theme" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm rounded-md">
+                                    <option value="wedding">Wedding Photography</option>
+                                    <option value="music">Music Production</option>
+                                    <option value="corporate">Corporate/Other Photography</option>
+                                </select>
+                            </div>
+                            <h4 class="text-lg font-semibold pt-2">Client Information</h4>
+                            <div>
+                                <label for="client-name" class="block text-sm font-medium text-gray-700">Client Name</label>
+                                <input type="text" id="client-name" value="Rohan & Priya" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                            <div>
+                                <label for="client-address" class="block text-sm font-medium text-gray-700">Client Address</label>
+                                <textarea id="client-address" rows="2" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">123 Wedding Lane, Jaipur, Rajasthan</textarea>
+                            </div>
+                            <div>
+                                <label for="project-name" class="block text-sm font-medium text-gray-700">Project Name</label>
+                                <input type="text" id="project-name" value="The Grand Wedding" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="invoice-date" class="block text-sm font-medium text-gray-700">Invoice Date</label>
+                                    <input type="date" id="invoice-date" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                                <div>
+                                    <label for="due-date" class="block text-sm font-medium text-gray-700">Due Date</label>
+                                    <input type="date" id="due-date" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                            </div>
+                            <h4 class="text-lg font-semibold pt-2">Invoice Items</h4>
+                            <div id="invoice-items-container" class="space-y-2">
+                                <!-- JS will populate this -->
+                            </div>
+                            <button id="add-invoice-item" class="btn-primary py-2 text-sm w-full flex items-center justify-center">
+                                <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Add Item
+                            </button>
+                            <h4 class="text-lg font-semibold pt-2">Payment Details</h4>
+                            <div class="space-y-3">
+                                <div>
+                                    <label for="payment-mode" class="block text-sm font-medium text-gray-700">Payment Mode</label>
+                                    <select id="payment-mode" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                        <option>UPI</option>
+                                        <option>Bank Transfer</option>
+                                        <option>Cash</option>
+                                        <option>Cheque</option>
+                                        <option>Other</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="upi-id" class="block text-sm font-medium text-gray-700">UPI ID</label>
+                                    <input type="text" id="upi-id" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                                <div>
+                                    <label for="bank-name" class="block text-sm font-medium text-gray-700">Bank Name</label>
+                                    <input type="text" id="bank-name" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                                <div>
+                                    <label for="account-no" class="block text-sm font-medium text-gray-700">Account Number</label>
+                                    <input type="text" id="account-no" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                                <div>
+                                    <label for="ifsc-code" class="block text-sm font-medium text-gray-700">IFSC Code</label>
+                                    <input type="text" id="ifsc-code" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4 mt-4">
+                                <div>
+                                    <label for="discount" class="block text-sm font-medium text-gray-700">Discount (₹)</label>
+                                    <input type="number" id="discount" value="5000" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                                <div>
+                                    <label for="amount-received" class="block text-sm font-medium text-gray-700">Amount Received (₹)</label>
+                                    <input type="number" id="amount-received" value="20000" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                            </div>
+                            <div class="flex items-center">
+                                <input id="gst-toggle" type="checkbox" class="h-4 w-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500">
+                                <label for="gst-toggle" class="ml-2 block text-sm text-gray-900">Apply GST (18%)</label>
+                            </div>
+                            <h4 class="text-lg font-semibold pt-2">Footer</h4>
+                            <div>
+                                <label for="footer-notes" class="block text-sm font-medium text-gray-700">Notes / Terms</label>
+                                <textarea id="footer-notes" rows="3" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">Delivery of final photos within 30 days. Album printing will take an additional 15 days.</textarea>
+                            </div>
+                            <div class="pt-4">
+                                <button id="print-invoice" class="btn-primary w-full flex items-center justify-center">
+                                    <i data-lucide="printer" class="w-5 h-5 mr-2"></i> Save as PDF / Print
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Invoice Preview -->
+                    <div class="lg:col-span-3 invoice-preview-container">
+                        <div id="invoice-preview" class="p-8 rounded-lg shadow-lg invoice-preview theme-wedding">
+                            <!-- Header -->
+                            <div class="invoice-header p-6 rounded-t-lg -m-8 mb-8">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <h1 class="text-3xl font-bold">D3 PRODUCTION</h1>
+                                        <p class="text-sm">B-18, Prabhu Dayal Marg, Sanganer, Jaipur, 303902</p>
+                                        <p class="text-sm">contact@d3production.com | +91 9057607030</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <h2 class="text-4xl font-bold uppercase tracking-wider">Invoice</h2>
+                                        <p id="preview-invoice-no" class="text-sm mt-1">INV-2025-001</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Client & Dates -->
+                            <div class="grid grid-cols-2 gap-8 mb-8">
+                                <div>
+                                    <h3 class="font-semibold mb-2">Billed To:</h3>
+                                    <p id="preview-client-name" class="font-bold"></p>
+                                    <p id="preview-client-address" class="text-sm whitespace-pre-line"></p>
+                                </div>
+                                <div class="text-right">
+                                    <p><span class="font-semibold">Invoice Date:</span> <span id="preview-invoice-date"></span></p>
+                                    <p><span class="font-semibold">Due Date:</span> <span id="preview-due-date"></span></p>
+                                    <p class="mt-2"><span class="font-semibold">Project:</span> <span id="preview-project-name"></span></p>
+                                </div>
+                            </div>
+                            <!-- Items Table -->
+                            <table class="w-full mb-8">
+                                <thead class="invoice-table-header">
+                                    <tr>
+                                        <th class="p-2 text-left font-semibold">Service</th>
+                                        <th class="p-2 text-right font-semibold">Qty</th>
+                                        <th class="p-2 text-right font-semibold">Rate</th>
+                                        <th class="p-2 text-right font-semibold">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="preview-invoice-items">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                            <!-- Totals -->
+                            <div class="flex justify-end">
+                                <div class="w-full md:w-1/2">
+                                    <div class="invoice-totals space-y-2 pt-4 border-t-2">
+                                        <div class="flex justify-between"><span class="font-semibold">Subtotal</span> <span id="preview-subtotal"></span></div>
+                                        <div class="flex justify-between"><span class="font-semibold">Discount</span> <span id="preview-discount"></span></div>
+                                        <div id="gst-row" class="flex justify-between hidden"><span class="font-semibold">GST (18%)</span> <span id="preview-gst"></span></div>
+                                        <div class="flex justify-between text-xl font-bold"><span class="font-bold">Total</span> <span id="preview-total"></span></div>
+                                        <div class="flex justify-between mt-2 pt-2 border-t"><span class="font-semibold">Amount Paid</span> <span id="preview-amount-received"></span></div>
+                                        <div class="flex justify-between text-lg font-bold bg-yellow-100 p-2 rounded"><span class="font-bold">Pending Amount</span> <span id="preview-pending-balance" class="text-red-600"></span></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Footer -->
+                            <div class="mt-12 pt-4 border-t">
+                                <h4 class="font-semibold">Payment Details</h4>
+                                <p class="text-sm"><span class="font-semibold">Mode:</span> <span id="preview-payment-mode"></span></p>
+                                <p class="text-sm break-all">
+                                    <span class="font-semibold">UPI ID:</span> <span id="preview-upi-id"></span> |
+                                    <span class="font-semibold">Bank:</span> <span id="preview-bank-name"></span> |
+                                    <span class="font-semibold">Acc:</span> <span id="preview-account-no"></span> |
+                                    <span class="font-semibold">IFSC:</span> <span id="preview-ifsc-code"></span>
+                                </p>
+                                <div class="mt-4">
+                                    <h4 class="font-semibold">Notes & Terms</h4>
+                                    <p id="preview-footer-notes" class="text-xs whitespace-pre-line"></p>
+                                </div>
+                                <div class="text-center mt-8">
+                                    <p class="font-semibold">Thank you for choosing D3 Production!</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quotation Generator View -->
+            <div data-view="quotations">
+                <h2 class="text-3xl font-bold mb-2">Quotation Generator</h2>
+                <p class="text-gray-500 mb-8">Create elegant, category-themed estimates for your clients.</p>
+                <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                    <!-- Quotation Form -->
+                    <div class="lg:col-span-2 card p-6 h-fit">
+                        <h3 class="text-xl font-semibold mb-4 border-b pb-2">Quotation Details</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="quotation-theme" class="block text-sm font-medium text-gray-700">Service Category / Theme</label>
+                                <select id="quotation-theme" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm rounded-md">
+                                    <option value="wedding">Wedding Photography</option>
+                                    <option value="music">Music Production</option>
+                                    <option value="corporate">Corporate/Other</option>
+                                </select>
+                            </div>
+
+                             <h4 class="text-lg font-semibold pt-2">Client & Event Details</h4>
+                             <input type="text" id="q-client-name" placeholder="Client Name" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                             <input type="text" id="q-event-type" placeholder="Event Type (e.g., Wedding)" class="mt-2 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                             <textarea id="q-project-desc" placeholder="Project Description" rows="2" class="mt-2 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></textarea>
+
+                             <h4 class="text-lg font-semibold pt-2">Dates & Validity</h4>
+                             <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="q-issue-date" class="block text-sm font-medium text-gray-700">Date of Issue</label>
+                                    <input type="date" id="q-issue-date" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                                <div>
+                                    <label for="q-valid-till" class="block text-sm font-medium text-gray-700">Valid Till</label>
+                                    <input type="date" id="q-valid-till" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                            </div>
+                            
+                            <h4 class="text-lg font-semibold pt-2">Services & Pricing</h4>
+                            <div id="quotation-items-container" class="space-y-2">
+                                <!-- JS populates this -->
+                            </div>
+                            <button id="add-quotation-item" class="btn-primary py-2 text-sm w-full flex items-center justify-center"><i data-lucide="plus" class="w-4 h-4 mr-2"></i> Add Service</button>
+                            
+                             <h4 class="text-lg font-semibold pt-2">Financials</h4>
+                             <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="q-discount" class="block text-sm font-medium text-gray-700">Discount (₹)</label>
+                                    <input type="number" id="q-discount" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                                 <div>
+                                    <label for="q-advance" class="block text-sm font-medium text-gray-700">Advance (₹)</label>
+                                    <input type="number" id="q-advance" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                </div>
+                             </div>
+                             <div class="flex items-center">
+                                <input id="q-gst-toggle" type="checkbox" class="h-4 w-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500">
+                                <label for="q-gst-toggle" class="ml-2 block text-sm text-gray-900">Apply GST (18%)</label>
+                            </div>
+
+                             <div class="pt-4 flex space-x-2">
+                                 <button id="print-quotation" class="btn-primary w-full flex items-center justify-center"><i data-lucide="printer" class="w-5 h-5 mr-2"></i> Save as PDF</button>
+                                 <button id="share-quotation-email" class="bg-gray-700 hover:bg-gray-800 text-white font-semibold w-full flex items-center justify-center py-2 px-4 rounded"><i data-lucide="send" class="w-5 h-5 mr-2"></i> Share via Email</button>
+                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Quotation Preview -->
+                    <div class="lg:col-span-3 invoice-preview-container">
+                        <div id="quotation-preview" class="p-8 rounded-lg shadow-lg invoice-preview theme-wedding">
+                            <!-- Header -->
+                            <div class="invoice-header text-center p-6 rounded-t-lg -m-8 mb-8">
+                                <h1 class="text-4xl font-bold">D3 PRODUCTION</h1>
+                                <p class="text-md mt-1">"Capturing Emotions, Crafting Memories"</p>
+                            </div>
+                            
+                            <!-- Title and Meta -->
+                            <div class="text-center mb-8">
+                                <h2 class="text-2xl font-bold uppercase tracking-widest">Quotation</h2>
+                                <p class="text-sm text-gray-500 mt-1">Estimate for Services</p>
+                            </div>
+                            <div class="grid grid-cols-2 gap-8 mb-8">
+                                <div>
+                                    <h3 class="font-semibold mb-2">Prepared For:</h3>
+                                    <p id="q-preview-client-name" class="font-bold"></p>
+                                    <p id="q-preview-event-type" class="text-sm"></p>
+                                    <p id="q-preview-project-desc" class="text-xs whitespace-pre-line mt-1"></p>
+                                </div>
+                                <div class="text-right">
+                                    <p><span class="font-semibold">Quotation No:</span> <span id="q-preview-no">QTN-2025-001</span></p>
+                                    <p><span class="font-semibold">Date of Issue:</span> <span id="q-preview-issue-date"></span></p>
+                                    <p><span class="font-semibold">Valid Till:</span> <span id="q-preview-valid-till"></span></p>
+                                </div>
+                            </div>
+                            
+                            <!-- Items Table -->
+                            <table class="w-full mb-8">
+                                <thead class="invoice-table-header">
+                                    <tr>
+                                        <th class="p-2 text-left font-semibold">Service</th>
+                                        <th class="p-2 text-center font-semibold">Qty</th>
+                                        <th class="p-2 text-center font-semibold">Unit</th>
+                                        <th class="p-2 text-right font-semibold">Rate</th>
+                                        <th class="p-2 text-right font-semibold">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="q-preview-items"></tbody>
+                            </table>
+
+                            <!-- Totals -->
+                             <div class="flex justify-end">
+                                <div class="w-full md-w-2/3 lg:w-1/2">
+                                    <div class="invoice-totals space-y-2 pt-4 border-t-2">
+                                        <div class="flex justify-between"><span class="font-semibold">Subtotal</span> <span id="q-preview-subtotal"></span></div>
+                                        <div class="flex justify-between"><span class="font-semibold">Discount</span> <span id="q-preview-discount"></span></div>
+                                        <div id="q-gst-row" class="flex justify-between hidden"><span class="font-semibold">GST (18%)</span> <span id="q-preview-gst"></span></div>
+                                        <div class="flex justify-between text-2xl font-bold"><span class="font-bold">Grand Total</span> <span id="q-preview-total"></span></div>
+                                        <div class="flex justify-between mt-2 pt-2 border-t"><span class="font-semibold">Advance Required</span> <span id="q-preview-advance"></span></div>
+                                        <div class="flex justify-between text-lg font-bold"><span class="font-semibold">Pending Amount</span> <span id="q-preview-pending" class="text-red-600"></span></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Terms & Footer -->
+                             <div class="mt-12 pt-4 border-t text-xs">
+                                <h4 class="font-bold text-sm mb-2">Terms & Conditions</h4>
+                                <ul class="list-disc list-inside space-y-1">
+                                    <li>50% advance payment is required to confirm the booking.</li>
+                                    <li>Remaining balance to be cleared before the delivery of final media.</li>
+                                    <li>Final photos will be delivered within 30 days after the event.</li>
+                                    <li>This quotation is valid for 15 days from the date of issue.</li>
+                                </ul>
+                                <div class="text-center mt-8">
+                                    <p class="font-semibold text-lg">Thank you for considering D3 PRODUCTION!</p>
+                                    <p>+91 9057607030 | contact@d3production.com | www.d3production.com</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Placeholder Views for other modules -->
+            <div data-view="gallery" class="card p-8">
+                <div id="gallery-admin-view">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h2 class="text-3xl font-bold">Client Gallery Management</h2>
+                            <p class="text-gray-500">Manage all your client albums and selections.</p>
+                        </div>
+                        <button id="create-album-btn" class="btn-primary flex items-center">
+                            <i data-lucide="plus" class="w-5 h-5 mr-2"></i> Create New Album
+                        </button>
+                    </div>
+                    
+                    <div id="album-list" class="space-y-4">
+                        <!-- Albums will be dynamically inserted here -->
+                    </div>
+                </div>
+
+                <div id="album-detail-view" class="hidden">
+                    <!-- Album details and photos will be shown here -->
+                </div>
+            </div>
+            <div data-view="invitations" class="card p-8">
+                <h2 class="text-3xl font-bold mb-2">Wedding Invitation Generator</h2>
+                <p class="text-gray-500">This module is under construction. Coming soon!</p>
+            </div>
+
+        </main>
+    </div>
+    
+    <!-- Email Quotation Modal -->
+    <div id="email-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-2xl font-bold">Share Quotation via Email</h3>
+                <button id="close-email-modal" class="text-gray-500 hover:text-gray-800">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label for="email-to" class="block text-sm font-medium text-gray-700">Client's Email</label>
+                    <input type="email" id="email-to" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" placeholder="client@example.com">
+                </div>
+                 <div>
+                    <label for="email-subject" class="block text-sm font-medium text-gray-700">Subject</label>
+                    <input type="text" id="email-subject" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md bg-gray-100">
+                </div>
+                <div>
+                     <label for="email-body" class="block text-sm font-medium text-gray-700">Message</label>
+                     <textarea id="email-body" rows="12" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></textarea>
+                </div>
+                <div class="text-right">
+                    <button id="send-email-btn" class="btn-primary">
+                        Send Email
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Client-facing Gallery View (Full screen overlay) -->
+    <div id="client-view-container" class="hidden">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h1 class="text-3xl font-bold text-white" id="client-view-album-name"></h1>
+                    <p class="text-gray-300" id="client-view-instruction">Click the heart to select your favorite photos.</p>
+                </div>
+                <button id="close-client-view-btn" class="text-white bg-gray-700 hover:bg-gray-600 rounded-full p-2">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div class="bg-gray-800 p-4 rounded-lg">
+                <div class="flex justify-between items-center text-white mb-4 p-2 bg-gray-900 rounded">
+                     <h3 class="text-lg font-semibold">Your Selections</h3>
+                     <p><span id="client-selection-count">0</span> photos selected</p>
+                </div>
+                <div id="client-gallery-grid" class="gallery-grid">
+                    <!-- Client photos will be dynamically inserted here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="module">
+        lucide.createIcons();
+
+        // --- Basic Navigation ---
+        const navLinks = document.querySelectorAll('.nav-link');
+        const navCards = document.querySelectorAll('[data-nav-card]');
+        const views = document.querySelectorAll('[data-view]');
+        const mainContent = document.querySelector('.main-content');
+
+        function switchView(viewName) {
+            mainContent.style.opacity = '0';
+            
+            setTimeout(() => {
+                navLinks.forEach(link => {
+                    link.classList.toggle('active', link.dataset.nav === viewName);
+                });
+
+                views.forEach(view => {
+                    view.classList.toggle('active', view.dataset.view === viewName);
+                });
+
+                mainContent.style.opacity = '1';
+                window.scrollTo(0, 0);
+            }, 200);
+        }
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                switchView(link.dataset.nav);
+            });
+        });
+
+        navCards.forEach(card => {
+            card.addEventListener('click', (e) => {
+                e.preventDefault();
+                switchView(card.dataset.navCard);
+            });
+        });
+
+        // --- INVOICE GENERATOR LOGIC ---
+        
+        // Helper function to format date for input[type=date] which needs YYYY-MM-DD
+        function toInputDateString(date) {
+            return date.toISOString().split('T')[0];
+        }
+
+        const today = new Date();
+        const futureDate = new Date();
+        futureDate.setDate(today.getDate() + 15);
+
+        const invoiceState = {
+            theme: 'wedding',
+            clientName: 'Rohan & Priya',
+            clientAddress: '123 Wedding Lane, Jaipur, Rajasthan',
+            projectName: 'The Grand Wedding',
+            invoiceDate: toInputDateString(today),
+            dueDate: toInputDateString(futureDate),
+            items: [
+                { service: 'Candid Photography', desc: '150 edited photos', qty: 1, rate: 25000 },
+                { service: 'Traditional Video', desc: '3 hours full coverage', qty: 3, rate: 2000 },
+                { service: 'Drone Shoot', desc: 'Aerial shots', qty: 1, rate: 5000 },
+            ],
+            discount: 5000,
+            amountReceived: 20000,
+            applyGst: false,
+            footerNotes: 'Delivery of final photos within 30 days. Album printing will take an additional 15 days.',
+            paymentMode: 'UPI',
+            upiId: 'd3production@upi',
+            bankName: 'HDFC Bank',
+            accountNo: '9057607030',
+            ifscCode: 'HDFC000123',
+        };
+        
+        const serviceTemplates = {
+            wedding: [
+                { service: 'Candid Photography', desc: '150 edited photos', qty: 1, rate: 25000 },
+                { service: 'Traditional Video', desc: '3 hours full coverage', qty: 3, rate: 2000 },
+                { service: 'Drone Shoot', desc: 'Aerial shots', qty: 1, rate: 5000 },
+            ],
+            music: [
+                { service: 'Recording', desc: 'Vocal + Instruments', qty: 5, rate: 1500 },
+                { service: 'Mixing & Mastering', desc: 'Full Track', qty: 1, rate: 5000 },
+            ],
+            corporate: [
+                { service: 'Product Shoot', desc: '30 images', qty: 30, rate: 200 },
+                { service: 'Portrait Session', desc: '2-hour session', qty: 2, rate: 1500 },
+            ]
+        };
+
+        const form = {
+            theme: document.getElementById('invoice-theme'),
+            clientName: document.getElementById('client-name'),
+            clientAddress: document.getElementById('client-address'),
+            projectName: document.getElementById('project-name'),
+            invoiceDate: document.getElementById('invoice-date'),
+            dueDate: document.getElementById('due-date'),
+            itemsContainer: document.getElementById('invoice-items-container'),
+            addItemBtn: document.getElementById('add-invoice-item'),
+            discount: document.getElementById('discount'),
+            amountReceived: document.getElementById('amount-received'),
+            gstToggle: document.getElementById('gst-toggle'),
+            footerNotes: document.getElementById('footer-notes'),
+            printBtn: document.getElementById('print-invoice'),
+            paymentMode: document.getElementById('payment-mode'),
+            upiId: document.getElementById('upi-id'),
+            bankName: document.getElementById('bank-name'),
+            accountNo: document.getElementById('account-no'),
+            ifscCode: document.getElementById('ifsc-code'),
+        };
+
+        const preview = {
+            container: document.getElementById('invoice-preview'),
+            invoiceNo: document.getElementById('preview-invoice-no'),
+            clientName: document.getElementById('preview-client-name'),
+            clientAddress: document.getElementById('preview-client-address'),
+            projectName: document.getElementById('preview-project-name'),
+            invoiceDate: document.getElementById('preview-invoice-date'),
+            dueDate: document.getElementById('preview-due-date'),
+            items: document.getElementById('preview-invoice-items'),
+            subtotal: document.getElementById('preview-subtotal'),
+            discount: document.getElementById('preview-discount'),
+            gstRow: document.getElementById('gst-row'),
+            gst: document.getElementById('preview-gst'),
+            total: document.getElementById('preview-total'),
+            amountReceived: document.getElementById('preview-amount-received'),
+            pendingBalance: document.getElementById('preview-pending-balance'),
+            footerNotes: document.getElementById('preview-footer-notes'),
+            paymentMode: document.getElementById('preview-payment-mode'),
+            upiId: document.getElementById('preview-upi-id'),
+            bankName: document.getElementById('preview-bank-name'),
+            accountNo: document.getElementById('preview-account-no'),
+            ifscCode: document.getElementById('preview-ifsc-code'),
+        };
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2 }).format(amount);
+        }
+
+        function renderInvoice() {
+            // Update Theme
+            preview.container.className = `p-8 rounded-lg shadow-lg invoice-preview theme-${invoiceState.theme}`;
+
+            // Update Header & Client Info
+            preview.clientName.textContent = invoiceState.clientName;
+            preview.clientAddress.textContent = invoiceState.clientAddress;
+            preview.projectName.textContent = invoiceState.projectName;
+
+            // Update Dates
+            preview.invoiceDate.textContent = invoiceState.invoiceDate ? new Date(invoiceState.invoiceDate).toLocaleDateString('en-GB') : '';
+            preview.dueDate.textContent = invoiceState.dueDate ? new Date(invoiceState.dueDate).toLocaleDateString('en-GB') : '';
+            
+            // Render items in preview
+            preview.items.innerHTML = '';
+            let subtotal = 0;
+            invoiceState.items.forEach(item => {
+                const amount = item.qty * item.rate;
+                subtotal += amount;
+                const row = `
+                    <tr class="border-b">
+                        <td class="p-2">
+                            <p class="font-semibold">${item.service}</p>
+                            <p class="text-xs">${item.desc}</p>
+                        </td>
+                        <td class="p-2 text-right">${item.qty}</td>
+                        <td class="p-2 text-right">${formatCurrency(item.rate)}</td>
+                        <td class="p-2 text-right font-semibold">${formatCurrency(amount)}</td>
+                    </tr>
+                `;
+                preview.items.insertAdjacentHTML('beforeend', row);
+            });
+
+            // Calculate & Render Totals
+            const discount = parseFloat(invoiceState.discount) || 0;
+            const gstAmount = invoiceState.applyGst ? subtotal * 0.18 : 0;
+            const total = subtotal - discount + gstAmount;
+            const amountReceived = parseFloat(invoiceState.amountReceived) || 0;
+            const pendingBalance = total - amountReceived;
+            
+            preview.subtotal.textContent = formatCurrency(subtotal);
+            preview.discount.textContent = `- ${formatCurrency(discount)}`;
+            preview.gst.textContent = formatCurrency(gstAmount);
+            preview.gstRow.classList.toggle('hidden', !invoiceState.applyGst);
+            preview.total.textContent = formatCurrency(total);
+            preview.amountReceived.textContent = formatCurrency(amountReceived);
+            preview.pendingBalance.textContent = formatCurrency(pendingBalance);
+            preview.paymentMode.textContent = invoiceState.paymentMode;
+            preview.upiId.textContent = invoiceState.upiId;
+            preview.bankName.textContent = invoiceState.bankName;
+            preview.accountNo.textContent = invoiceState.accountNo;
+            preview.ifscCode.textContent = invoiceState.ifscCode;
+
+
+            // Update Footer
+            preview.footerNotes.textContent = invoiceState.footerNotes;
+        }
+        
+        function renderFormItems() {
+            form.itemsContainer.innerHTML = '';
+            invoiceState.items.forEach((item, index) => {
+                const itemEl = document.createElement('div');
+                itemEl.className = 'grid grid-cols-12 gap-2 items-center';
+                itemEl.innerHTML = `
+                    <div class="col-span-11 grid grid-cols-2 gap-2">
+                        <input type="text" placeholder="Service" data-index="${index}" data-field="service" value="${item.service}" class="col-span-2 shadow-sm sm:text-sm border-gray-300 rounded-md p-1">
+                        <textarea placeholder="Description" data-index="${index}" data-field="desc" class="col-span-2 shadow-sm sm:text-sm border-gray-300 rounded-md p-1" rows="1">${item.desc}</textarea>
+                        <input type="number" placeholder="Qty" data-index="${index}" data-field="qty" value="${item.qty}" class="shadow-sm sm:text-sm border-gray-300 rounded-md p-1">
+                        <input type="number" placeholder="Rate" data-index="${index}" data-field="rate" value="${item.rate}" class="shadow-sm sm:text-sm border-gray-300 rounded-md p-1">
+                    </div>
+                    <button class="remove-item-btn text-red-500 hover:text-red-700" data-index="${index}"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                `;
+                form.itemsContainer.appendChild(itemEl);
+            });
+            lucide.createIcons(); // Re-render icons for remove buttons
+        }
+        
+        function syncFormToState() {
+            form.theme.value = invoiceState.theme;
+            form.clientName.value = invoiceState.clientName;
+            form.clientAddress.value = invoiceState.clientAddress;
+            form.projectName.value = invoiceState.projectName;
+            form.invoiceDate.value = invoiceState.invoiceDate;
+            form.dueDate.value = invoiceState.dueDate;
+            form.discount.value = invoiceState.discount;
+            form.amountReceived.value = invoiceState.amountReceived;
+            form.gstToggle.checked = invoiceState.applyGst;
+            form.footerNotes.value = invoiceState.footerNotes;
+            form.paymentMode.value = invoiceState.paymentMode;
+            form.upiId.value = invoiceState.upiId;
+            form.bankName.value = invoiceState.bankName;
+            form.accountNo.value = invoiceState.accountNo;
+            form.ifscCode.value = invoiceState.ifscCode;
+            renderFormItems();
+        }
+
+        function updateAndRender() {
+            renderInvoice();
+        }
+
+        form.theme.addEventListener('change', e => {
+            invoiceState.theme = e.target.value;
+            invoiceState.items = [...serviceTemplates[invoiceState.theme]];
+            syncFormToState();
+            updateAndRender();
+        });
+
+        form.paymentMode.addEventListener('change', e => {
+            invoiceState.paymentMode = e.target.value;
+            updateAndRender();
+        });
+
+        // Event delegation for form inputs
+        document.body.addEventListener('input', e => {
+            const target = e.target;
+            if (target.id === 'client-name') invoiceState.clientName = target.value;
+            else if (target.id === 'client-address') invoiceState.clientAddress = target.value;
+            else if (target.id === 'project-name') invoiceState.projectName = target.value;
+            else if (target.id === 'invoice-date') invoiceState.invoiceDate = target.value;
+            else if (target.id === 'due-date') invoiceState.dueDate = target.value;
+            else if (target.id === 'discount') invoiceState.discount = target.value;
+            else if (target.id === 'amount-received') invoiceState.amountReceived = target.value;
+            else if (target.id === 'footer-notes') invoiceState.footerNotes = target.value;
+            else if (target.id === 'upi-id') invoiceState.upiId = target.value;
+            else if (target.id === 'bank-name') invoiceState.bankName = target.value;
+            else if (target.id === 'account-no') invoiceState.accountNo = target.value;
+            else if (target.id === 'ifsc-code') invoiceState.ifscCode = target.value;
+            else if (target.dataset.index && target.closest('#invoice-items-container')) { // Handle item updates
+                const { index, field } = target.dataset;
+                invoiceState.items[index][field] = target.value;
+            }
+            updateAndRender();
+        });
+        
+        form.gstToggle.addEventListener('change', e => {
+            invoiceState.applyGst = e.target.checked;
+            updateAndRender();
+        });
+        
+        form.addItemBtn.addEventListener('click', () => {
+            invoiceState.items.push({ service: '', desc: '', qty: 1, rate: 0 });
+            renderFormItems();
+            updateAndRender();
+        });
+
+        form.itemsContainer.addEventListener('click', e => {
+            const removeBtn = e.target.closest('.remove-item-btn');
+            if (removeBtn) {
+                invoiceState.items.splice(removeBtn.dataset.index, 1);
+                renderFormItems();
+                updateAndRender();
+            }
+        });
+        
+        form.printBtn.addEventListener('click', () => window.print());
+
+        // Initial Load
+        syncFormToState();
+        updateAndRender();
+
+        // --- QUOTATION GENERATOR LOGIC ---
+        const qFutureDate = new Date();
+        qFutureDate.setDate(today.getDate() + 15);
+
+        const quotationState = {
+            theme: 'wedding',
+            clientName: 'Priya Sharma',
+            eventType: 'Full Wedding Coverage',
+            projectDesc: 'Includes pre-wedding, wedding, and reception events. Both photography and videography.',
+            issueDate: toInputDateString(today),
+            validTill: toInputDateString(qFutureDate),
+            items: [
+                { service: 'Candid Photography', qty: 1, unit: 'Package', rate: 30000 },
+                { service: 'Traditional Video', qty: 6, unit: 'Hours', rate: 1800 },
+                { service: 'Drone Shoot', qty: 1, unit: 'Session', rate: 5000 },
+            ],
+            discount: 3800,
+            advance: 30000,
+            applyGst: true,
+        };
+
+        const qForm = {
+            theme: document.getElementById('quotation-theme'),
+            clientName: document.getElementById('q-client-name'),
+            eventType: document.getElementById('q-event-type'),
+            projectDesc: document.getElementById('q-project-desc'),
+            issueDate: document.getElementById('q-issue-date'),
+            validTill: document.getElementById('q-valid-till'),
+            itemsContainer: document.getElementById('quotation-items-container'),
+            addItemBtn: document.getElementById('add-quotation-item'),
+            discount: document.getElementById('q-discount'),
+            advance: document.getElementById('q-advance'),
+            gstToggle: document.getElementById('q-gst-toggle'),
+            printBtn: document.getElementById('print-quotation'),
+            shareBtn: document.getElementById('share-quotation-email'),
+        };
+
+        const qPreview = {
+            container: document.getElementById('quotation-preview'),
+            clientName: document.getElementById('q-preview-client-name'),
+            eventType: document.getElementById('q-preview-event-type'),
+            projectDesc: document.getElementById('q-preview-project-desc'),
+            issueDate: document.getElementById('q-preview-issue-date'),
+            validTill: document.getElementById('q-preview-valid-till'),
+            items: document.getElementById('q-preview-items'),
+            subtotal: document.getElementById('q-preview-subtotal'),
+            discount: document.getElementById('q-preview-discount'),
+            gstRow: document.getElementById('q-gst-row'),
+            gst: document.getElementById('q-preview-gst'),
+            total: document.getElementById('q-preview-total'),
+            advance: document.getElementById('q-preview-advance'),
+            pending: document.getElementById('q-preview-pending'),
+        };
+
+        function generateEmailBody(state, totals) {
+            const servicesList = state.items.map(item => {
+                return `- ${item.service}: ${formatCurrency(item.rate)} x ${item.qty} ${item.unit}`;
+            }).join('\n');
+
+            const validityDays = Math.round((new Date(state.validTill) - new Date(state.issueDate)) / (1000 * 60 * 60 * 24));
+
+            return `Dear ${state.clientName || '[Client Name]'},
+
+Greetings from D3 PRODUCTION!
+
+Thank you for reaching out to us. Please find below the quotation for the services you requested. We offer professional and customized solutions in the fields of wedding photography, event coverage, music production, and related services.
+
+Kindly review the details and let us know if you'd like to proceed or make any changes.
+
+📦 Service Summary:
+${servicesList}
+
+---
+💰 Financial Details:
+Total Quoted Amount: ${totals.total}
+Discount: ${totals.discount}
+Advance Payment Required: ${totals.advance}
+Balance Payable: ${totals.pending}
+---
+
+Additional Details:
+- Project: ${state.eventType}
+- Validity of Quotation: ${validityDays} days from the date of issue
+
+We look forward to working with you and making your moments memorable. If you have any questions or require a customized package, feel free to contact us.
+
+Warm regards,
+The D3 PRODUCTION Team
++91 9057607030 | contact@d3production.com
+www.d3production.com`;
+        }
+
+
+        function renderQuotation() {
+            qPreview.container.className = `p-8 rounded-lg shadow-lg invoice-preview theme-${quotationState.theme}`;
+            qPreview.clientName.textContent = quotationState.clientName;
+            qPreview.eventType.textContent = quotationState.eventType;
+            qPreview.projectDesc.textContent = quotationState.projectDesc;
+            qPreview.issueDate.textContent = quotationState.issueDate ? new Date(quotationState.issueDate).toLocaleDateString('en-GB') : '';
+            qPreview.validTill.textContent = quotationState.validTill ? new Date(quotationState.validTill).toLocaleDateString('en-GB') : '';
+
+            qPreview.items.innerHTML = '';
+            let subtotal = 0;
+            quotationState.items.forEach(item => {
+                const amount = (item.qty || 0) * (item.rate || 0);
+                subtotal += amount;
+                const row = `<tr class="border-b">
+                    <td class="p-2 font-semibold">${item.service}</td>
+                    <td class="p-2 text-center">${item.qty}</td>
+                    <td class="p-2 text-center">${item.unit}</td>
+                    <td class="p-2 text-right">${formatCurrency(item.rate)}</td>
+                    <td class="p-2 text-right font-semibold">${formatCurrency(amount)}</td>
+                </tr>`;
+                qPreview.items.insertAdjacentHTML('beforeend', row);
+            });
+
+            const discount = parseFloat(quotationState.discount) || 0;
+            const gstAmount = quotationState.applyGst ? (subtotal - discount) * 0.18 : 0;
+            const total = subtotal - discount + gstAmount;
+            const advance = parseFloat(quotationState.advance) || 0;
+            const pending = total - advance;
+
+            qPreview.subtotal.textContent = formatCurrency(subtotal);
+            qPreview.discount.textContent = `- ${formatCurrency(discount)}`;
+            qPreview.gst.textContent = formatCurrency(gstAmount);
+            qPreview.gstRow.classList.toggle('hidden', !quotationState.applyGst);
+            qPreview.total.textContent = formatCurrency(total);
+            qPreview.advance.textContent = formatCurrency(advance);
+            qPreview.pending.textContent = formatCurrency(pending);
+
+            return { subtotal, discount, gstAmount, total, advance, pending };
+        }
+
+        function renderQuotationFormItems() {
+            qForm.itemsContainer.innerHTML = '';
+            quotationState.items.forEach((item, index) => {
+                const itemEl = document.createElement('div');
+                itemEl.className = 'grid grid-cols-12 gap-2 items-center';
+                itemEl.innerHTML = `<div class="col-span-11 grid grid-cols-4 gap-2">
+                        <input type="text" placeholder="Service" data-index="${index}" data-field="service" value="${item.service}" class="col-span-4 shadow-sm sm:text-sm border-gray-300 rounded-md p-1">
+                        <input type="number" placeholder="Qty" data-index="${index}" data-field="qty" value="${item.qty}" class="shadow-sm sm:text-sm border-gray-300 rounded-md p-1">
+                        <input type="text" placeholder="Unit" data-index="${index}" data-field="unit" value="${item.unit}" class="shadow-sm sm:text-sm border-gray-300 rounded-md p-1">
+                        <input type="number" placeholder="Rate" data-index="${index}" data-field="rate" value="${item.rate}" class="col-span-2 shadow-sm sm:text-sm border-gray-300 rounded-md p-1">
+                    </div>
+                    <button class="remove-q-item-btn text-red-500 hover:text-red-700" data-index="${index}"><i data-lucide="trash-2" class="w-5 h-5"></i></button>`;
+                qForm.itemsContainer.appendChild(itemEl);
+            });
+            lucide.createIcons();
+        }
+
+        function syncQuotationForm() {
+            qForm.theme.value = quotationState.theme;
+            qForm.clientName.value = quotationState.clientName;
+            qForm.eventType.value = quotationState.eventType;
+            qForm.projectDesc.value = quotationState.projectDesc;
+            qForm.issueDate.value = quotationState.issueDate;
+            qForm.validTill.value = quotationState.validTill;
+            qForm.discount.value = quotationState.discount;
+            qForm.advance.value = quotationState.advance;
+            qForm.gstToggle.checked = quotationState.applyGst;
+            renderQuotationFormItems();
+        }
+
+        function updateAndRenderQuotation() {
+            return renderQuotation();
+        }
+
+        qForm.theme.addEventListener('change', e => {
+            quotationState.theme = e.target.value;
+            updateAndRenderQuotation();
+        });
+
+        document.body.addEventListener('input', e => {
+            const id = e.target.id;
+            if(id.startsWith('q-')) {
+                if (id === 'q-client-name') quotationState.clientName = e.target.value;
+                else if (id === 'q-event-type') quotationState.eventType = e.target.value;
+                else if (id === 'q-project-desc') quotationState.projectDesc = e.target.value;
+                else if (id === 'q-issue-date') quotationState.issueDate = e.target.value;
+                else if (id === 'q-valid-till') quotationState.validTill = e.target.value;
+                else if (id === 'q-discount') quotationState.discount = e.target.value;
+                else if (id === 'q-advance') quotationState.advance = e.target.value;
+                updateAndRenderQuotation();
+            } else if (e.target.dataset.index && e.target.closest('#quotation-items-container')) {
+                const { index, field } = e.target.dataset;
+                quotationState.items[index][field] = e.target.value;
+                updateAndRenderQuotation();
+            }
+        });
+        
+        qForm.gstToggle.addEventListener('change', e => {
+            quotationState.applyGst = e.target.checked;
+            updateAndRenderQuotation();
+        });
+
+        qForm.addItemBtn.addEventListener('click', () => {
+            quotationState.items.push({ service: '', qty: 1, unit: 'Package', rate: 0 });
+            renderQuotationFormItems();
+        });
+
+        qForm.itemsContainer.addEventListener('click', e => {
+            const removeBtn = e.target.closest('.remove-q-item-btn');
+            if (removeBtn) {
+                quotationState.items.splice(removeBtn.dataset.index, 1);
+                renderQuotationFormItems();
+                updateAndRenderQuotation();
+            }
+        });
+        
+        qForm.printBtn.addEventListener('click', () => window.print());
+
+        // --- Email Modal Logic ---
+        const emailModal = document.getElementById('email-modal');
+        const emailTo = document.getElementById('email-to');
+        const emailSubject = document.getElementById('email-subject');
+        const emailBody = document.getElementById('email-body');
+
+        qForm.shareBtn.addEventListener('click', () => {
+            const totals = updateAndRenderQuotation();
+            const formattedTotals = {
+                total: formatCurrency(totals.total),
+                discount: formatCurrency(totals.discount),
+                advance: formatCurrency(totals.advance),
+                pending: formatCurrency(totals.pending),
+            };
+
+            emailSubject.value = `Quotation for ${quotationState.eventType} - D3 PRODUCTION`;
+            emailBody.value = generateEmailBody(quotationState, formattedTotals);
+            emailModal.classList.remove('hidden');
+            lucide.createIcons(); // For the 'x' icon
+        });
+
+        document.getElementById('close-email-modal').addEventListener('click', () => {
+            emailModal.classList.add('hidden');
+        });
+        
+        document.getElementById('send-email-btn').addEventListener('click', () => {
+            if(!emailTo.value) {
+                alert("Please enter the client's email address.");
+                return;
+            }
+            alert(`Email sent successfully to ${emailTo.value}! (This is a simulation)`);
+            emailModal.classList.add('hidden');
+        });
+
+
+        syncQuotationForm();
+        renderQuotation();
+
+        // --- CLIENT GALLERY LOGIC ---
+        const galleryAdminView = document.getElementById('gallery-admin-view');
+        const albumDetailView = document.getElementById('album-detail-view');
+        const albumListContainer = document.getElementById('album-list');
+        const createAlbumBtn = document.getElementById('create-album-btn');
+        
+        // Mock Data
+        let galleryData = [
+            {
+                id: 1,
+                albumName: 'Rahul & Neha Wedding',
+                clientName: 'Rahul & Neha',
+                date: '2025-10-15',
+                photos: Array.from({length: 40}, (_, i) => ({id: `rn${i+1}`, url: `https://placehold.co/600x600/EAB308/FFFFFF?text=Photo+${i+1}`})),
+                selections: [`rn3`, `rn8`, `rn15`, `rn22`]
+            },
+            {
+                id: 2,
+                albumName: "Arijit's New Single Promo",
+                clientName: 'Arijit Singh',
+                date: '2025-09-28',
+                photos: Array.from({length: 15}, (_, i) => ({id: `as${i+1}`, url: `https://placehold.co/600x600/1E293B/FFFFFF?text=Music+${i+1}`})),
+                selections: []
+            }
+        ];
+
+        function renderAlbumList() {
+            galleryAdminView.classList.remove('hidden');
+            albumDetailView.classList.add('hidden');
+            albumListContainer.innerHTML = '';
+            galleryData.forEach(album => {
+                const albumCard = `
+                    <div class="card p-4 flex justify-between items-center">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-800">${album.albumName}</h3>
+                            <p class="text-sm text-gray-500">Client: ${album.clientName} | ${album.photos.length} photos | ${album.selections.length} selected</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button data-album-id="${album.id}" class="share-album-btn btn-primary py-2 px-3 text-sm flex items-center">
+                                <i data-lucide="share-2" class="w-4 h-4 mr-2"></i> Share
+                            </button>
+                            <button data-album-id="${album.id}" class="view-album-btn btn-primary py-2 px-3 text-sm flex items-center">
+                                View Album <i data-lucide="arrow-right" class="w-4 h-4 ml-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                albumListContainer.insertAdjacentHTML('beforeend', albumCard);
+            });
+            lucide.createIcons();
+        }
+
+        function renderAlbumDetail(albumId) {
+            const album = galleryData.find(a => a.id == albumId);
+            if (!album) return;
+
+            galleryAdminView.classList.add('hidden');
+            albumDetailView.classList.remove('hidden');
+            
+            albumDetailView.innerHTML = `
+                <div class="mb-6">
+                    <button id="back-to-albums" class="text-gray-600 hover:text-gray-900 font-semibold flex items-center">
+                        <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i> Back to All Albums
+                    </button>
+                </div>
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h3 class="text-3xl font-bold">${album.albumName}</h3>
+                        <p class="text-gray-500">Managing selections for ${album.clientName}</p>
+                    </div>
+                    <button id="download-selected-btn" data-album-id="${album.id}" class="btn-primary flex items-center" ${album.selections.length === 0 ? 'disabled' : ''}>
+                        <i data-lucide="download" class="w-5 h-5 mr-2"></i> Download Selected (${album.selections.length})
+                    </button>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg border">
+                    <div id="admin-gallery-grid" class="gallery-grid">
+                        ${album.photos.map(photo => `
+                            <div class="gallery-item ${album.selections.includes(photo.id) ? 'admin-selected-view' : ''}">
+                                <img src="${photo.url}" alt="Client Photo" loading="lazy">
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+
+            document.getElementById('back-to-albums').addEventListener('click', renderAlbumList);
+            document.getElementById('download-selected-btn').addEventListener('click', (e) => {
+                const id = e.currentTarget.dataset.albumId;
+                const albumToDownload = galleryData.find(a => a.id == id);
+                if(albumToDownload && albumToDownload.selections.length > 0) {
+                   console.log('Downloading selected photos for album:', albumToDownload.albumName);
+                   console.log('Selected file IDs:', albumToDownload.selections);
+                   alert(`Downloading ${albumToDownload.selections.length} photos. See console for details.`);
+                }
+            });
+        }
+        
+        // --- Client View Logic ---
+        const clientViewContainer = document.getElementById('client-view-container');
+        const clientGalleryGrid = document.getElementById('client-gallery-grid');
+        const clientViewAlbumName = document.getElementById('client-view-album-name');
+        const clientSelectionCount = document.getElementById('client-selection-count');
+
+        function openClientView(albumId) {
+            const album = galleryData.find(a => a.id == albumId);
+            if (!album) return;
+            
+            clientViewAlbumName.textContent = album.albumName;
+            clientSelectionCount.textContent = album.selections.length;
+            
+            clientGalleryGrid.innerHTML = '';
+            album.photos.forEach(photo => {
+                const isSelected = album.selections.includes(photo.id);
+                const item = `
+                    <div class="gallery-item ${isSelected ? 'selected' : ''}" data-album-id="${album.id}" data-photo-id="${photo.id}">
+                        <img src="${photo.url}" alt="Client Photo" loading="lazy">
+                        <button class="select-btn">
+                            <i data-lucide="heart" class="w-5 h-5 ${isSelected ? 'fill-current' : ''}"></i>
+                        </button>
+                    </div>
+                `;
+                clientGalleryGrid.insertAdjacentHTML('beforeend', item);
+            });
+            
+            lucide.createIcons();
+            clientViewContainer.classList.remove('hidden');
+        }
+        
+        clientViewContainer.addEventListener('click', (e) => {
+            // Handle selection
+            const galleryItem = e.target.closest('.gallery-item');
+            if (galleryItem) {
+                const albumId = galleryItem.dataset.albumId;
+                const photoId = galleryItem.dataset.photoId;
+                const album = galleryData.find(a => a.id == albumId);
+                
+                galleryItem.classList.toggle('selected');
+                const heartIcon = galleryItem.querySelector('i');
+                heartIcon.classList.toggle('fill-current');
+
+                const selectionIndex = album.selections.indexOf(photoId);
+                if (selectionIndex > -1) {
+                    album.selections.splice(selectionIndex, 1);
+                } else {
+                    album.selections.push(photoId);
+                }
+                clientSelectionCount.textContent = album.selections.length;
+                // In a real app, this change would be saved to a database.
+            }
+            
+            // Handle close
+            if (e.target.closest('#close-client-view-btn')) {
+                clientViewContainer.classList.add('hidden');
+                renderAlbumList(); // Refresh admin list to show updated selection count
+            }
+        });
+
+
+        // Event Listeners
+        albumListContainer.addEventListener('click', (e) => {
+            const viewBtn = e.target.closest('.view-album-btn');
+            const shareBtn = e.target.closest('.share-album-btn');
+            
+            if (viewBtn) {
+                renderAlbumDetail(viewBtn.dataset.albumId);
+            }
+            if (shareBtn) {
+                const albumId = shareBtn.dataset.albumId;
+                // In a real app, this would be a unique URL.
+                const fakeUrl = `https://d3-production.com/gallery/view/${albumId}`;
+                const clientInstruction = "Share this secure link with your client. They can view photos and make selections, but cannot download.\n\n" + fakeUrl;
+                
+                // For this demo, we'll show a prompt and also open it directly for convenience
+                alert(clientInstruction);
+                openClientView(albumId);
+            }
+        });
+
+        createAlbumBtn.addEventListener('click', () => {
+            const albumName = prompt("Enter new album name:");
+            const clientName = prompt("Enter client name:");
+            if(albumName && clientName) {
+                const newAlbum = {
+                    id: Date.now(),
+                    albumName,
+                    clientName,
+                    date: new Date().toISOString().split('T')[0],
+                    photos: [],
+                    selections: []
+                };
+                galleryData.unshift(newAlbum);
+                renderAlbumList();
+                alert(`Album "${albumName}" created! Now open the album to add photos.`);
+            }
+        });
+        
+        // Initial render
+        renderAlbumList();
+
+        // --- AI Poster Generator Logic ---
+        const posterForm = document.getElementById('poster-form');
+        const posterResultContainer = document.getElementById('poster-result-container');
+        const posterPlaceholder = document.getElementById('poster-placeholder');
+        const posterLoader = document.getElementById('poster-loader');
+        const posterImage = document.getElementById('poster-image');
+        const posterActions = document.getElementById('poster-actions');
+        const downloadBtn = document.getElementById('download-btn');
+        const photoUpload = document.getElementById('photo-upload');
+
+        let uploadedImageBase64 = null;
+
+        photoUpload.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    uploadedImageBase64 = e.target.result.split(',')[1];
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        posterForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const eventDetails = document.getElementById('event-details').value;
+            const posterTheme = document.getElementById('poster-theme').value;
+            const posterSize = document.getElementById('poster-size').value;
+
+            if (!eventDetails) {
+                alert("Please enter event details.");
+                return;
+            }
+
+            posterPlaceholder.classList.add('hidden');
+            posterImage.classList.add('hidden');
+            posterLoader.classList.remove('hidden');
+            posterActions.classList.add('hidden');
+
+            const userPrompt = `Create a visually stunning ${posterTheme} themed poster. The poster should be in ${posterSize} dimensions. The main text to include is: "${eventDetails}". Make it elegant and professional, suitable for D3 Production's brand.`;
+            
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{
+                    parts: [{ text: userPrompt }]
+                }],
+                generationConfig: {
+                    responseModalities: ['TEXT', 'IMAGE']
+                },
+            };
+
+            if (uploadedImageBase64) {
+                 payload.contents[0].parts.push({
+                    inlineData: {
+                        mimeType: "image/png",
+                        data: uploadedImageBase64
+                    }
+                });
+            }
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                const base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+
+                if (base64Data) {
+                    const imageUrl = `data:image/png;base64,${base64Data}`;
+                    posterImage.src = imageUrl;
+                    downloadBtn.href = imageUrl;
+                    posterImage.classList.remove('hidden');
+                    posterActions.classList.remove('hidden');
+                } else {
+                    throw new Error("No image data found in API response.");
+                }
+
+            } catch (error) {
+                console.error("Error generating poster:", error);
+                posterPlaceholder.classList.remove('hidden');
+                alert("Sorry, there was an error generating the poster. Please try again.");
+            } finally {
+                posterLoader.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
+
+
